@@ -1,0 +1,80 @@
+
+TASK FLOW - Client
+
+- Korisnik otvara aplikaciju
+- Instancira sve okvire u jednoj klasi, nazvana Client recimo, i onda otvara početni okvir
+- Otvara mu se prozor - > Pictionary kao naslov; Username: <TextBox>; <Button 'Play'>
+	- Omogućuje mu se ulazak u igru samo ako je unio neki oblik korisničkog imena
+
+ULAZAK U IGRU!
+- Spajanje na server
+- Slanje svog korisničkog imena
+- Otvara Thread (nužno, zbog modula tkinter) u kojemu se odvija nesmetana komunikacija između njega i servera - TU PRISTIŽU SVE PORUKE SA SERVERA!!! - skraćenica u tekstu: COMMTHR
+- Prihvaća poruku s command_key: "-gamestat:<bool>": (COMMTHR)
+	- ako je gamestat = False, korisniku se otvara bijeli prozor s natpisom: "Waiting for players..."
+	- ako je gamestat = True, korisniku se odmah otvara glavno sučelje koje je već skicirano
+- Također, korisnik će tu primiti i još jednu poruku: "join:<name>"; to je on sam, i treba s tom porukom odmah ažurirati PlayerList Frame, bez obzira čekao na početak igre ili ne
+	(naime, svi okviri su već napravljeni, samo treba implementirati funckiju koja će otvarati, tj. zatvarati određene oblike, s obzirom na trenutno stanje igre i slično) (COMMTHR)
+
+
+IGRA UČITANA
+- I ništa, sada samo prihvaća poruke, i u skladu s njima postupa dalje
+- Poruke koje može primiti i što onda treba raditi su sljedeće: (COMMTHR)
+	-> "-round:<int>" => PORUKU DOBIVAJU SVI, s tim si updejta <Label 'Round <round> of 8'>
+	-> "-role:artist" => Korisnik je odabran za crtača; DOBIVA DOZVOLU ZA CRTANJEM NA PLOČI (Canvas), zajedno sa biranjem boja i ostalih opcija za crtanje, dok OSTALIMA TO OSTAJE
+				DISABLEANO!; BLOKIRA MU SE UNOS TEKSTA, ali vidi chat!, postavlja mu se neki atribut, poput self.role, i onda u COMMTHR ima if uvjet gdje ako je
+				self.role == "artist", onda očekuje još neke poruke, poput:
+		-> "-words:<word1>,<word2>,<word3>" => Korisnik otvara okvir za odabir riječi, jednu od njih 3
+		DELETE! -> "-timeisup:" => Gasi mu se prozor za odabir riječi, jer nije odabrao riječ (COMMTHR)
+		-> "-dword:<word>" => Dobiva riječ koju mora crtati (COMMTHR) - prikazuje si to na vrh ekrana!
+	-> "-role:guesser" => Znači da pogađa riječi: ne dira ništa, ostaje u okviru u kojem je, i čeka znak za početak nove runde (runde u smislu da kruga, crtanje!)
+	-> "-start:"	=> Znači da započinje nova runda (turn)!
+	-> "-hword:<word>" => OVO DOBIVAJU SVI KOJI POGAĐAJU: i artist, i guesser, i to je ujedno i početak kruga, i server kreće sa odbrojavanjem vremena!
+	-> "-time:<int>" => OVO DOBIVAJU SVI: poruka o preostalom vremenu, to preuzima i automatski ažurira label za vrijeme
+	-> "-timeisup:" => OVO DOBIVAJU SVI (artist može dobiti to i ako nije na vrijeme izabrao riječ - NE VIŠE, PROMIJENJENO!), ugl značit će im kraj runde, i onda čekaju poruku o rezultatima i prikazuju taj frame
+	-> "-isword:<bool>" => dobiva poruku je li pogodio riječ ili ne; AKO JE, onda mu se blokira naknadni unos ikakvog teksta, sve do završetka runde; AKO NIJE, ništa, pokušava dalje
+	-> "-chat:<username>,<message>" => tu poruku dobivaju SVI, i s njom si ažuriraju chat!
+	-> "-image:<code>" => poruku dobivaju SVI KOJI POGAĐAJU, jer ako pošaljemo i crtaču, imat će groznih problema (duplo crtanje?)
+	-> "-result:<word>,<leaderboard> => svi primaju ovo i otvaraju okvir za prikaz rezultata, prvi parametar je zadana riječ (otkrivena), a drugi je riječnik, to lijepo sortirati i prikazati
+	-> "-leaderboard:<leaderboard>" => za razliku od prethodne naredbe, ovu naredbu koristi kako bi ažurirao <Label 'The Score: <score>" u PlayerListFrame!
+	-> "-join:<username>" => poruku dobivaju SVI, U BILO KOJEM TRENUTKU, i dodaju si igrača u PlayerList Frame
+	-> "-left:" => poruku dobivaju SVI, U BILO KOJEM TRENUTKU, i brišu si igrača s PlayerList Frame
+	-> "-gamestat<bool>" => poruku dobivaju SVI kad se spoje, a ako je True, igrač šalje request za game info: "-gameinfo:"
+	-> "-end:<leaderboard>" => oznaka za kraj igre, SVI TO UZIMAJU, prikazuje se okvir sa završnim rezultatima, i pritiskom na gumb <Button 'End'> korisnik se vraća na početni okvir! U međuvremenu ga
+			je server već maknuo sa socketa, no može se ponovno spojiti tj. uči u novu igru (ovo znači da istovremeno možemo igrati samo jednu igru, ali to će biti jedan od updatea onda!)
+
+- Poruke koje može slati i što onda treba raditi su sljedeće: (već je veliki dio implementiran u server.py, pa je sljedeće samo uzeto iz koda, s opisom)
+	-> "-choice:<word>" => artist selected the word
+	-> "-gameinfo:" => player who joined the game while the same has already began, requests must informations
+	-> "-image:" => for updating the current image
+	-> "-isword:" => guesser tries to guess the word
+	-> "-left:" => player left the game
+
+KAKO KREIRATI SUČELJE??
+- Svaki okvir ima svoju zasebnu datoteku
+- Međutim, glavni okvir ima nekoliko objekata:
+	- Header => dio u kojemu piše <Label 'Round <int> of 8'> | <Label '<hword>'> | <Label '<time>'
+	- PlayerList => dio u kojem se nalaze imena igrača i trenutni score, paziti na visinu jednog labela, tako da taman fitta ako se spoji 8 igrača
+	- Canvas => Platno za crtanje + ploča s bojama, debljinom kista i oznake za "delete all"
+	- Chat => Prostor za razgovor; sastoji se od <Entry> za unos poruke i <Text>, za prikaz poruka, a na vrhu je <Label 'Chat'>
+- Napravi package frames i unutra zasebno svaki frame
+
+
+
+
+File "C:\Users\Karlo\AppData\Local\Programs\Python\Python39\lib\threading.py", line 950, in _bootstrap_inner
+    self.run()
+  File "C:\Users\Karlo\AppData\Local\Programs\Python\Python39\lib\threading.py", line 888, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\Karlo\Documents\Programming\Python\Projects\Pictionary\client.py", line 156, in handle_communication
+    self.commands.get_time(message)
+  File "C:\Users\Karlo\Documents\Programming\Python\Projects\Pictionary\packages\client\commands.py", line 170, in get_time
+    self.client.GAME_FRAME.header.update_(widget=self.client.GAME_FRAME.header.TIMER_LABEL, value=time_)
+  File "C:\Users\Karlo\Documents\Programming\Python\Projects\Pictionary\packages\client\frames\game.py", line 60, in update_
+    widget.config(text=self.widget_text[widget].format(value))
+  File "C:\Users\Karlo\AppData\Local\Programs\Python\Python39\lib\tkinter\__init__.py", line 1639, in configure
+    return self._configure('configure', cnf, kw)
+  File "C:\Users\Karlo\AppData\Local\Programs\Python\Python39\lib\tkinter\__init__.py", line 1629, in _configure
+    self.tk.call(_flatten((self._w, cmd)) + self._options(cnf))
+RuntimeError: main thread is not in main loop
+
