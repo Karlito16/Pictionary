@@ -10,7 +10,7 @@ import packages.server.turn as turn
 
 RUNNING_SLEEP = 0.0001
 CONNECTION_CLOSE_SLEEP = 0.2
-NUMBER_OF_ROUNDS = 2    # 8
+NUMBER_OF_ROUNDS = 1    # 8
 
 
 class Game(object):
@@ -34,8 +34,9 @@ class Game(object):
         for player_ in self.players:
             # time.sleep(SEND_SLEEP)
             comm.send(connection=player_.connection, message=f"-end;{self.leaderboard}")
-            time.sleep(CONNECTION_CLOSE_SLEEP)
-            player_.connection.close()
+            player_.disconnect()
+            time.sleep(CONNECTION_CLOSE_SLEEP)  # prevents the [Error 79]	[WinError 10053] An established connection was aborted by the software in your host machine
+            player_.connection.close()  # [Error 79] because while loop in 'client_trace' is sill running and trying to receive new message
         # self.game_runnig = False
         # self.players = []
         self.__init__(server=self.server)
@@ -154,7 +155,7 @@ class Game(object):
                 self.players.pop(index)
                 # what if player leaves during the turn and what if he was the artist?
                 connection.close()      # test this, sometimes it throws ConnectionAbortError in method self.listen
-                player_.connected = False
+                player_.disconnect()
                 self.server.client_left_info(username=player_.username)
                 # time.sleep(SEND_SLEEP)
                 comm.send_to_all(sequence=self.players, message=f"-left:{player_.username}")

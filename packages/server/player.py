@@ -13,3 +13,11 @@ class Player(object):
 
     def update_score(self, score):
         self.score += score
+
+    def disconnect(self):
+        """
+        Disconnects the player.
+        :return: None
+        """
+        self.connected = False
+        return

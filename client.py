@@ -136,6 +136,8 @@ class Client(Window):
                         self.commands.get_dword(message)
                     elif command_key == "-end":
                         self.commands.get_end(message)
+                        self.connection.close()
+                        self.app_running = False
                     elif command_key == "-gamestat":
                         self.commands.get_gamestat(message)
                     elif command_key == "-hword":

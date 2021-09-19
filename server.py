@@ -65,12 +65,16 @@ class Server(socket.socket):
         :param connection: <class socket>
         :return: None
         """
+        player = self.game.get_ply_by_conn(connection=connection)
 
-        while True:
+        while player.connected:
             try:
                 command_key, value = comm.receive(connection=connection)
+            except ValueError as err:
+                # print(f"Player connected: {player.connected}")
+                pass    # this happens at the end of the game, when disconnecting players - temp solution?
             except Exception as err:        # TODO: replace Exception with ConnectionAbortError - TEST THIS
-                print(err)
+                Logger.print(f"[Error 73] {err}")
                 break   # thread ends here
             else:
                 if command_key == "-choice":
@@ -96,7 +100,7 @@ class Server(socket.socket):
                 elif command_key == "-left":
                     # player left the game
                     self.game.player_remove(connection=connection)
-                    break   # this ends the while loop (should fix ERROR 37)
+                    # break   # this ends the while loop (should fix ERROR 37)
 
     def start_game_thread(self):
         """
